@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <title>Neo Survivor - Admin Console</title>
+    <style>
+        body {
+            background-color: #0f172a; color: #e2e8f0; font-family: 'Courier New', Courier, monospace;
+            margin: 0; padding: 20px; display: flex; flex-direction: column; height: 100vh; box-sizing: border-box;
+            align-items: center; justify-content: center;
+        }
+        h2 { color: #f43f5e; margin-top: 0; text-align: center; }
+        
+        .screen { display: none; width: 100%; max-width: 600px; }
+        .screen.active { display: flex; flex-direction: column; }
+        .box { background: #020617; border: 1px solid #334155; padding: 30px; border-radius: 8px; text-align: center; }
+        
+        input {
+            background: #1e293b; border: 1px solid #475569; color: #fff;
+            padding: 12px; margin-bottom: 15px; font-family: 'Courier New', Courier, monospace; 
+            font-size: 16px; outline: none; border-radius: 4px; width: 100%; box-sizing: border-box;
+        }
+        input::placeholder { color: #64748b; }
+        button {
+            background: #10b981; border: none; color: white; padding: 12px 20px; width: 100%;
+            font-weight: bold; cursor: pointer; border-radius: 4px; font-size: 16px; margin-top: 10px;
+        }
+        button:hover { background: #059669; }
+        
+        .error-msg { color: #ef4444; margin-top: 15px; min-height: 20px; font-weight: bold; }
+
+        #screen-3 { height: 100%; justify-content: flex-start; max-width: 800px; }
+        #console-output {
+            flex: 1; background: #020617; border: 1px solid #334155; padding: 15px; 
+            overflow-y: auto; white-space: pre-wrap; border-radius: 8px; margin-bottom: 10px; font-size: 14px; text-align: left;
+        }
+        .controls { display: flex; gap: 10px; margin-bottom: 10px; }
+        .controls input { margin-bottom: 0; }
+        .controls button { width: auto; margin-top: 0; }
+    </style>
+</head>
+<body>
+
+    <div id="screen-1" class="screen active">
+        <div class="box">
+            <h2>⚡ ADMIN LOGIN</h2>
+            <input type="text" id="user-input" placeholder="Přihlašovací jméno" autocomplete="off">
+            <input type="password" id="pass-input" placeholder="Heslo">
+            <button id="btn-login">PŘIHLÁSIT SE</button>
+            <div id="err-1" class="error-msg"></div>
+        </div>
+    </div>
+
+    <div id="screen-2" class="screen">
+        <div class="box">
+            <h2>🔐 OVĚŘENÍ PINU</h2>
+            <p style="color: #94a3b8; margin-bottom: 20px;">Zkontroluj logy na AlwaysData serveru.</p>
+            <input type="text" id="pin-input" placeholder="6-místný kód" autocomplete="off" style="text-align: center; font-weight: bold; font-size: 20px; letter-spacing: 5px;">
+            <button id="btn-verify">OVĚŘIT</button>
+            <div id="err-2" class="error-msg"></div>
+        </div>
+    </div>
+
+    <div id="screen-3" class="screen">
+        <h2 style="text-align: left;">⚡ NEO SURVIVOR - ADMIN TERMINAL</h2>
+        <div id="console-output"></div>
+        <div class="controls">
+            <span style="align-self: center; color: #10b981; font-weight:bold; font-size: 20px;">></span>
+            <input type="text" id="cmd-input" placeholder="Příkaz (např. 'give Matej 500' nebo 'level Matej 10')" autocomplete="off">
+            <button id="btn-send">ODESLAT</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script>
+        const SERVER_URL = "https://neoserver.alwaysdata.net/"; // <-- Tvůj server
+        const socket = io(SERVER_URL);
+
+        function showScreen(num) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('screen-' + num).classList.add('active');
+        }
+
+        function log(msg, color = "#e2e8f0") {
+            const out = document.getElementById('console-output');
+            const div = document.createElement('div');
+            div.style.color = color;
+            div.innerText = msg;
+            out.appendChild(div);
+            out.scrollTop = out.scrollHeight;
+        }
+
+        socket.on('connect', () => { console.log("Připojeno k serveru."); });
+
+        socket.on('adminAuthError', (msg) => {
+            document.getElementById('err-1').innerText = msg;
+            document.getElementById('err-2').innerText = msg;
+        });
+
+        socket.on('adminAuthStep', (data) => {
+            document.getElementById('err-1').innerText = "";
+            document.getElementById('err-2').innerText = "";
+            if (data.step === 2) showScreen(2);
+            if (data.step === 3) {
+                showScreen(3);
+                log("--- ÚSPĚŠNĚ PŘIHLÁŠEN DO ADMIN KONZOLE ---", "lime");
+            }
+        });
+
+        socket.on('adminResponse', (data) => {
+            log("> " + data.msg, data.color);
+        });
+
+        document.getElementById('btn-login').addEventListener('click', () => {
+            const user = document.getElementById('user-input').value.trim();
+            const pass = document.getElementById('pass-input').value.trim();
+            if (!user || !pass) return document.getElementById('err-1').innerText = "Vyplň jméno a heslo.";
+            document.getElementById('err-1').innerText = "Ověřování...";
+            socket.emit('requestAdminPin', { user, pass });
+        });
+
+        document.getElementById('btn-verify').addEventListener('click', () => {
+            const user = document.getElementById('user-input').value.trim();
+            const pass = document.getElementById('pass-input').value.trim();
+            const pin = document.getElementById('pin-input').value.trim();
+            if (!pin) return document.getElementById('err-2').innerText = "Zadej PIN.";
+            document.getElementById('err-2').innerText = "Ověřování PINu...";
+            socket.emit('verifyAdminPin', { user, pass, pin });
+        });
+
+        function sendCommand() {
+            const cmd = document.getElementById('cmd-input').value.trim();
+            if (!cmd) return;
+            log("$ " + cmd, "gray");
+            socket.emit('adminCommand', { cmd: cmd });
+            document.getElementById('cmd-input').value = '';
+        }
+
+        document.getElementById('btn-send').addEventListener('click', sendCommand);
+        document.getElementById('cmd-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendCommand();
+        });
+    </script>
+</body>
+</html>
