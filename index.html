@@ -142,7 +142,7 @@
     <div id="screen-3" class="screen">
         <div class="box" style="height: 100%; display: flex; flex-direction: row; padding: 15px; gap: 20px; background: transparent; border: none; box-shadow: none;">
             
-            <!-- LEVÝ PANEL: MÍSTNOSTI -->
+            <!-- LEVÝ PANEL: MÍSTNOSTI A BURZA -->
             <!-- Omezení max-width aby střední panel dostal více místa -->
             <div style="flex: 1; min-width: 250px; max-width: 320px; background: var(--bg-panel); backdrop-filter: blur(16px); border-radius: 16px; border: 1px solid var(--border); padding: 15px; display: flex; flex-direction: column;">
                 <h3 style="color: var(--primary); text-transform: uppercase; font-size: 13px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
@@ -150,6 +150,22 @@
                     <button onclick="sendCommandRaw('rooms')" style="width: auto; padding: 4px 8px; margin: 0; font-size: 10px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); box-shadow: none;">↻</button>
                 </h3>
                 <div id="rooms-output" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;"></div>
+                
+                <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 15px 0;">
+                
+                <h3 style="color: #a855f7; text-transform: uppercase; font-size: 13px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
+                    <span>📈 Burza (SP)</span>
+                </h3>
+                <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px; align-items: center;">
+                        <span style="color: #94a3b8; font-size: 12px;">Aktuální cena SP:</span>
+                        <strong id="admin-sp-price" style="color: #fbbf24; font-size: 14px;">Čekání...</strong>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="number" id="input-sp-price" placeholder="Nová cena" style="margin-bottom: 0; padding: 8px; font-size: 12px;" />
+                        <button onclick="setMarketPrice()" style="margin-top: 0; padding: 8px 12px; background: #a855f7; font-size: 12px; width: auto; font-weight: bold;">SET</button>
+                    </div>
+                </div>
             </div>
 
             <!-- STŘEDNÍ PANEL: TERMINÁL A STATS -->
@@ -179,10 +195,12 @@
         </div>
     </div>
 
-    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script>
-        const SERVER_URL = "https://diffs-hammer-diamonds-assured.trycloudflare.com"; 
-        
+        // Set dynamic URL instead of hardcoded
+        const SERVER_URL = window.location.origin; 
+    </script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
         const socket = io(SERVER_URL, {
             transports: ['websocket'],
             extraHeaders: { "ngrok-skip-browser-warning": "true" }
@@ -213,6 +231,15 @@
                 document.getElementById('cmd-input').value = `set ${username} ${prop} ${newVal}`;
                 sendCommand();
                 setTimeout(() => { socket.emit('adminCommand', { cmd: `stats ${username}` }); }, 300);
+            }
+        }
+        
+        function setMarketPrice() {
+            const val = document.getElementById('input-sp-price').value;
+            if (val) {
+                document.getElementById('cmd-input').value = `set_price ${val}`;
+                sendCommand();
+                document.getElementById('input-sp-price').value = '';
             }
         }
 
@@ -323,6 +350,11 @@
 
         socket.on('connect', () => { console.log("Spojení navázáno."); });
         socket.on('adminAuthError', (msg) => { document.getElementById('err-1').innerText = msg; document.getElementById('err-2').innerText = msg; });
+        
+        socket.on('marketUpdate', (data) => {
+            const el = document.getElementById('admin-sp-price');
+            if (el) el.innerText = data.price + " Doge";
+        });
 
         socket.on('adminAuthStep', (data) => {
             document.getElementById('err-1').innerText = ""; document.getElementById('err-2').innerText = "";
@@ -332,7 +364,7 @@
                 log("===================================================", "#334155");
                 log(" SPOJENÍ ZABEZPEČENO. VÍTEJTE V ADMIN TERMINÁLU. ", "var(--primary)");
                 log(" Příkazy: set, unlock_all, give, level, stats,     ", "#94a3b8");
-                log("          announce, delete, rooms, feedback        ", "#94a3b8");
+                log("          announce, delete, rooms, feedback, set_price ", "#94a3b8");
                 log("===================================================\n", "#334155");
                 // Inicializační načtení panelů
                 socket.emit('adminCommand', { cmd: 'rooms' });
