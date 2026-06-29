@@ -2,72 +2,269 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
-    <title>Neo Survivor - Admin Console</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neo Survivor | Admin Terminal</title>
+    <meta name="description" content="Secure administrative terminal for Neo Survivor server management and player moderation.">
+    <meta name="theme-color" content="#09090b">
+    
+    <!-- Google Fonts pro moderní vzhled -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
     <style>
-        body {
-            background-color: #0f172a; color: #e2e8f0; font-family: 'Courier New', Courier, monospace;
-            margin: 0; padding: 20px; display: flex; flex-direction: column; height: 100vh; box-sizing: border-box;
-            align-items: center; justify-content: center;
+        :root {
+            --bg-dark: #09090b;
+            --bg-panel: rgba(24, 24, 27, 0.7);
+            --primary: #10b981;
+            --primary-hover: #059669;
+            --accent: #f43f5e;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: rgba(255, 255, 255, 0.1);
         }
-        h2 { color: #f43f5e; margin-top: 0; text-align: center; }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(16, 185, 129, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 85% 30%, rgba(244, 63, 94, 0.08) 0%, transparent 50%);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        h2 { 
+            color: var(--accent); 
+            margin-bottom: 24px; 
+            text-align: center; 
+            font-weight: 800;
+            font-size: 1.5rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            text-shadow: 0 0 20px rgba(244, 63, 94, 0.4);
+        }
         
-        .screen { display: none; width: 100%; max-width: 600px; }
-        .screen.active { display: flex; flex-direction: column; }
-        .box { background: #020617; border: 1px solid #334155; padding: 30px; border-radius: 8px; text-align: center; }
+        .screen { 
+            display: none; 
+            width: 100%; 
+            max-width: 480px; 
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+        
+        .screen.active { 
+            display: flex; 
+            flex-direction: column; 
+        }
+
+        .box { 
+            background: var(--bg-panel); 
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border); 
+            padding: 40px; 
+            border-radius: 20px; 
+            text-align: center; 
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .box:hover {
+            box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
         
         input {
-            background: #1e293b; border: 1px solid #475569; color: #fff;
-            padding: 12px; margin-bottom: 15px; font-family: 'Courier New', Courier, monospace; 
-            font-size: 16px; outline: none; border-radius: 4px; width: 100%; box-sizing: border-box;
+            background: rgba(0, 0, 0, 0.4); 
+            border: 1px solid var(--border); 
+            color: var(--text);
+            padding: 14px 18px; 
+            margin-bottom: 16px; 
+            font-family: 'JetBrains Mono', monospace; 
+            font-size: 15px; 
+            outline: none; 
+            border-radius: 12px; 
+            width: 100%; 
+            transition: all 0.2s ease;
         }
-        input::placeholder { color: #64748b; }
-        button {
-            background: #10b981; border: none; color: white; padding: 12px 20px; width: 100%;
-            font-weight: bold; cursor: pointer; border-radius: 4px; font-size: 16px; margin-top: 10px;
-        }
-        button:hover { background: #059669; }
-        
-        .error-msg { color: #ef4444; margin-top: 15px; min-height: 20px; font-weight: bold; }
 
-        #screen-3 { height: 100%; justify-content: flex-start; max-width: 800px; }
-        #console-output {
-            flex: 1; background: #020617; border: 1px solid #334155; padding: 15px; 
-            overflow-y: auto; white-space: pre-wrap; border-radius: 8px; margin-bottom: 10px; font-size: 14px; text-align: left;
+        input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+            background: rgba(0, 0, 0, 0.6);
         }
-        .controls { display: flex; gap: 10px; margin-bottom: 10px; }
-        .controls input { margin-bottom: 0; }
-        .controls button { width: auto; margin-top: 0; }
+
+        input::placeholder { color: #475569; }
+
+        button {
+            background: linear-gradient(135deg, var(--primary), var(--primary-hover)); 
+            border: none; 
+            color: white; 
+            padding: 16px 24px; 
+            width: 100%;
+            font-weight: 600; 
+            cursor: pointer; 
+            border-radius: 12px; 
+            font-size: 15px; 
+            letter-spacing: 1px;
+            margin-top: 10px;
+            transition: all 0.2s ease;
+            box-shadow: 0 10px 20px -10px var(--primary);
+        }
+
+        button:hover { 
+            transform: translateY(-2px);
+            box-shadow: 0 15px 25px -10px var(--primary);
+            filter: brightness(1.1);
+        }
+        
+        button:active {
+            transform: translateY(1px);
+        }
+
+        .error-msg { 
+            color: #ef4444; 
+            margin-top: 16px; 
+            min-height: 20px; 
+            font-size: 14px;
+            font-weight: 600; 
+        }
+
+        #screen-3 { 
+            height: 90vh; 
+            justify-content: flex-start; 
+            max-width: 900px; 
+        }
+
+        .terminal-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .status-dot {
+            width: 10px; height: 10px;
+            background-color: var(--primary);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--primary);
+            animation: pulse 2s infinite;
+        }
+
+        #console-output {
+            flex: 1; 
+            background: rgba(0, 0, 0, 0.6); 
+            border: 1px solid var(--border); 
+            padding: 20px; 
+            overflow-y: auto; 
+            white-space: pre-wrap; 
+            border-radius: 16px; 
+            margin-bottom: 20px; 
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px; 
+            line-height: 1.5;
+            text-align: left;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
+        }
+
+        .controls { 
+            display: flex; 
+            gap: 12px; 
+            align-items: center; 
+            background: var(--bg-panel);
+            padding: 12px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+        }
+
+        .controls span {
+            color: var(--primary);
+            font-weight: 800;
+            font-size: 18px;
+            padding-left: 10px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .controls input { 
+            margin-bottom: 0; 
+            border: none;
+            background: transparent;
+            box-shadow: none;
+            flex: 1;
+        }
+
+        .controls button { 
+            width: auto; 
+            margin-top: 0; 
+            padding: 12px 30px;
+            box-shadow: none;
+        }
+
+        /* Scrollbar styling pro hezčí posouvání */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
     </style>
 </head>
 <body>
 
     <div id="screen-1" class="screen active">
         <div class="box">
-            <h2>⚡ ADMIN LOGIN</h2>
-            <input type="text" id="user-input" placeholder="Přihlašovací jméno" autocomplete="off">
+            <h2>⚡ System Login</h2>
+            <input type="text" id="user-input" placeholder="Přihlašovací jméno" autocomplete="off" spellcheck="false">
             <input type="password" id="pass-input" placeholder="Heslo">
-            <button id="btn-login">PŘIHLÁSIT SE</button>
+            <button id="btn-login">AUTORIZOVAT</button>
             <div id="err-1" class="error-msg"></div>
         </div>
     </div>
 
     <div id="screen-2" class="screen">
         <div class="box">
-            <h2>🔐 OVĚŘENÍ PINU</h2>
-            <p style="color: #94a3b8; margin-bottom: 20px;">Zkontroluj logy na serveru.</p>
-            <input type="text" id="pin-input" placeholder="6-místný kód" autocomplete="off" style="text-align: center; font-weight: bold; font-size: 20px; letter-spacing: 5px;">
-            <button id="btn-verify">OVĚŘIT</button>
+            <h2>🔐 2FA Ověření</h2>
+            <p style="color: var(--text-muted); margin-bottom: 24px; font-size: 14px;">Zkontroluj serverové logy pro jednorázový PIN.</p>
+            <input type="text" id="pin-input" placeholder="######" autocomplete="off" style="text-align: center; font-weight: bold; font-size: 24px; letter-spacing: 12px; padding-left: 24px;">
+            <button id="btn-verify">POTVRDIT PIN</button>
             <div id="err-2" class="error-msg"></div>
         </div>
     </div>
 
     <div id="screen-3" class="screen">
-        <h2 style="text-align: left;">⚡ NEO SURVIVOR - ADMIN TERMINAL</h2>
-        <div id="console-output"></div>
-        <div class="controls">
-            <span style="align-self: center; color: #10b981; font-weight:bold; font-size: 20px;">></span>
-            <input type="text" id="cmd-input" placeholder="Příkaz (např. 'give Matej 500' nebo 'level Matej 10')" autocomplete="off">
-            <button id="btn-send">ODESLAT</button>
+        <div class="box" style="height: 100%; display: flex; flex-direction: column; padding: 25px;">
+            <div class="terminal-header">
+                <div class="status-dot"></div>
+                <h2 style="margin: 0; text-shadow: none; color: var(--text); font-size: 1.2rem;">Neo Survivor <span style="color: var(--text-muted); font-weight: 400; font-size: 1rem;">| Admin Terminal</span></h2>
+            </div>
+            <div id="console-output"></div>
+            <div class="controls">
+                <span>❯</span>
+                <input type="text" id="cmd-input" placeholder="např. 'announce Restart za 5 minut!'" autocomplete="off" spellcheck="false">
+                <button id="btn-send">EXECUTE</button>
+            </div>
         </div>
     </div>
 
@@ -75,7 +272,6 @@
     <script>
         const SERVER_URL = "https://diffs-hammer-diamonds-assured.trycloudflare.com"; 
         
-        // Aktualizované připojení s vynucením websocketů a hlavičkou pro ngrok
         const socket = io(SERVER_URL, {
             transports: ['websocket'],
             extraHeaders: {
@@ -92,12 +288,21 @@
             const out = document.getElementById('console-output');
             const div = document.createElement('div');
             div.style.color = color;
-            div.innerText = msg;
+            
+            // Stylizované zvýraznění prefixů zpráv
+            if (msg.startsWith('>')) {
+                div.innerHTML = `<strong style="color: #64748b;">></strong> ${msg.substring(1)}`;
+            } else if (msg.startsWith('$')) {
+                div.innerHTML = `<strong style="color: var(--primary);">$</strong> ${msg.substring(1)}`;
+            } else {
+                div.innerText = msg;
+            }
+            div.style.marginBottom = "4px";
             out.appendChild(div);
             out.scrollTop = out.scrollHeight;
         }
 
-        socket.on('connect', () => { console.log("Připojeno k serveru."); });
+        socket.on('connect', () => { console.log("Spojení navázáno."); });
 
         socket.on('adminAuthError', (msg) => {
             document.getElementById('err-1').innerText = msg;
@@ -110,7 +315,11 @@
             if (data.step === 2) showScreen(2);
             if (data.step === 3) {
                 showScreen(3);
-                log("--- ÚSPĚŠNĚ PŘIHLÁŠEN DO ADMIN KONZOLE ---", "lime");
+                log("===================================================", "#334155");
+                log(" SPOJENÍ ZABEZPEČENO. VÍTEJTE V ADMIN TERMINÁLU. ", "var(--primary)");
+                log(" Dostupné příkazy: give, level, stats, delete,     ", "#94a3b8");
+                log("                   announce, rooms, feedback       ", "#94a3b8");
+                log("===================================================\n", "#334155");
             }
         });
 
@@ -121,7 +330,7 @@
         document.getElementById('btn-login').addEventListener('click', () => {
             const user = document.getElementById('user-input').value.trim();
             const pass = document.getElementById('pass-input').value.trim();
-            if (!user || !pass) return document.getElementById('err-1').innerText = "Vyplň jméno a heslo.";
+            if (!user || !pass) return document.getElementById('err-1').innerText = "Vyplňte jméno a heslo.";
             document.getElementById('err-1').innerText = "Ověřování...";
             socket.emit('requestAdminPin', { user, pass });
         });
@@ -130,17 +339,18 @@
             const user = document.getElementById('user-input').value.trim();
             const pass = document.getElementById('pass-input').value.trim();
             const pin = document.getElementById('pin-input').value.trim();
-            if (!pin) return document.getElementById('err-2').innerText = "Zadej PIN.";
+            if (!pin) return document.getElementById('err-2').innerText = "Zadejte PIN.";
             document.getElementById('err-2').innerText = "Ověřování PINu...";
             socket.emit('verifyAdminPin', { user, pass, pin });
         });
 
         function sendCommand() {
-            const cmd = document.getElementById('cmd-input').value.trim();
+            const cmdInput = document.getElementById('cmd-input');
+            const cmd = cmdInput.value.trim();
             if (!cmd) return;
-            log("$ " + cmd, "gray");
+            log("$ " + cmd, "var(--text)");
             socket.emit('adminCommand', { cmd: cmd });
-            document.getElementById('cmd-input').value = '';
+            cmdInput.value = '';
         }
 
         document.getElementById('btn-send').addEventListener('click', sendCommand);
